@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EVESCO Project Documents</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     body {
       background-color: #111;
@@ -11,9 +12,9 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
+      text-align: center;
     }
     h1 {
-      text-align: center;
       padding: 1rem;
     }
     .accordion {
@@ -21,7 +22,8 @@
       color: white;
       cursor: pointer;
       padding: 18px;
-      width: 100%;
+      width: 80%;
+      margin: 0 auto;
       border: none;
       text-align: left;
       outline: none;
@@ -37,6 +39,12 @@
       display: none;
       background-color: #1a1a1a;
       overflow: hidden;
+      text-align: left;
+      width: 80%;
+      margin: 0 auto 2rem;
+    }
+    .panel h3 {
+      padding-top: 1rem;
     }
     .file-link {
       color: #4da6ff;
@@ -48,13 +56,17 @@
       border-top: 1px solid #444;
       margin-top: 2rem;
       padding: 1rem;
-      text-align: left;
       font-size: 0.8rem;
       background-color: #111;
     }
     footer a {
       color: #4da6ff;
       text-decoration: none;
+    }
+    .footer-icons a {
+      margin: 0 10px;
+      color: #ccc;
+      font-size: 1.2rem;
     }
   </style>
 </head>
@@ -65,11 +77,11 @@
 
   <footer>
     <p>© 2025 Energize Solutions Inc. – All rights reserved.<br />
-    Powered by GitHub Pages | Contact: <a href="mailto:info@energizeos.com">info@energizeos.com</a></p>
-    <p>
-      <a href="https://www.linkedin.com/in/gongtiejing" target="_blank">LinkedIn</a>
-      <a href="https://github.com/enxpower" target="_blank" style="margin-left:10px;">GitHub</a>
-    </p>
+      Powered by GitHub Pages | Contact: <a href="mailto:info@energizeos.com">info@energizeos.com</a></p>
+    <div class="footer-icons">
+      <a href="https://www.linkedin.com/in/gongtiejing" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+      <a href="https://github.com/enxpower" target="_blank" aria-label="GitHub"><i class="fab fa-github"></i></a>
+    </div>
   </footer>
 
 <script>
@@ -78,8 +90,8 @@ const EVESCO_FOLDER_ID = '19bwRa8uRwawINwFl9SlNGAl8Eyi3ww8t';
 const projectContainer = document.getElementById('project-container');
 
 const categoryMap = {
-  'Technical Proposals': ['spec', 'datasheet', 'technical'],
-  'Legal and Commercial Documents': ['contract', 'agreement', 'terms', 'msa'],
+  '📁 Technical Proposals': ['spec', 'datasheet', 'technical'],
+  '📁 Legal and Commercial Documents': ['contract', 'agreement', 'terms', 'msa'],
 };
 
 async function listSubfolders(parentId) {
@@ -104,7 +116,7 @@ function categorizeFile(fileName) {
       return category;
     }
   }
-  return 'Other Attachments';
+  return '📁 Other Attachments';
 }
 
 function createAccordion(projectName, categorizedFiles) {
@@ -112,7 +124,7 @@ function createAccordion(projectName, categorizedFiles) {
   for (const [category, files] of Object.entries(categorizedFiles)) {
     html += `<h3>${category}</h3>`;
     files.forEach(file => {
-      html += `<a href="${file.webViewLink}" class="file-link" target="_blank">${file.name}</a>`;
+      html += `<a href="${file.webViewLink}" class="file-link" target="_blank">📄 ${file.name}</a>`;
     });
   }
   html += `</div>`;

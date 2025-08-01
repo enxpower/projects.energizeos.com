@@ -2,157 +2,86 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>EVESCO Project Documents</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     body {
       background-color: #111;
-      color: #fff;
+      color: #eee;
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
+      text-align: center;
     }
     h1 {
-      text-align: center;
-      padding: 1rem;
+      padding: 20px 0;
+      font-size: 1.6rem;
     }
-    .accordion {
-      background-color: #222;
-      color: white;
-      cursor: pointer;
-      padding: 18px;
-      width: 100%;
-      border: none;
+    .category {
+      max-width: 900px;
+      margin: 40px auto 20px;
       text-align: left;
-      outline: none;
-      font-size: 16px;
-      transition: 0.4s;
+    }
+    .category h2 {
       border-bottom: 1px solid #444;
+      padding-bottom: 8px;
+      margin-bottom: 15px;
+      color: #00bfff;
     }
-    .active, .accordion:hover {
-      background-color: #333;
-    }
-    .panel {
-      padding: 0 18px;
-      display: none;
-      background-color: #1a1a1a;
-      overflow: hidden;
-    }
-    .file-link {
-      color: #4da6ff;
-      text-decoration: none;
-      display: block;
+    .file {
       margin: 8px 0;
     }
+    .file a {
+      color: #87cefa;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+    .file a:hover {
+      text-decoration: underline;
+    }
     footer {
+      margin-top: 50px;
+      padding: 20px;
+      font-size: 0.9rem;
+      color: #ccc;
       border-top: 1px solid #444;
-      margin-top: 2rem;
-      padding: 1rem;
-      text-align: left;
-      font-size: 0.8rem;
-      background-color: #111;
     }
     footer a {
-      color: #4da6ff;
+      color: #87cefa;
       text-decoration: none;
+    }
+    .icons {
+      margin-top: 10px;
+    }
+    .icons a {
+      color: #ccc;
+      margin: 0 10px;
+      font-size: 1.4rem;
     }
   </style>
 </head>
 <body>
+
   <h1>EVESCO Project Documents</h1>
 
-  <div id="project-container">Loading project folders...</div>
+  <div class="category">
+    <h2>📁 Product Specs</h2>
+    <div class="file">📄 <a href="#">EnergizeOS_Product_Sales_Technical_Specification_.pdf</a></div>
+    <div class="file">📄 <a href="#">File# 001671 PowerCube™ 250kW-573kWh@400V_Spec.pdf</a></div>
+    <div class="file">📄 <a href="#">File# 001670 PowerStation™ AP Series_Spec.pdf</a></div>
+    <div class="file">📄 <a href="#">EMS_Schedule A – Project-Specific Order Summary_Secured_Filling Only.pdf</a></div>
+    <div class="file">📄 <a href="#">BESS_Schedule A – Project-Specific Order Summary_Secured_Filling Only.pdf</a></div>
+  </div>
 
   <footer>
-    <p>© 2025 Energize Solutions Inc. – All rights reserved.<br />
-    Powered by GitHub Pages | Contact: <a href="mailto:info@energizeos.com">info@energizeos.com</a></p>
-    <p>
-      <a href="https://www.linkedin.com/in/gongtiejing" target="_blank">LinkedIn</a>
-      <a href="https://github.com/enxpower" target="_blank" style="margin-left:10px;">GitHub</a>
-    </p>
+    © 2025 Energize Solutions Inc. – All rights reserved.<br>
+    Powered by GitHub Pages | Contact: <a href="mailto:info@energizeos.com">info@energizeos.com</a>
+    <div class="icons">
+      <a href="https://www.linkedin.com/in/gongtiejing" target="_blank"><i class="fab fa-linkedin"></i></a>
+      <a href="https://github.com/enxpower" target="_blank"><i class="fab fa-github"></i></a>
+    </div>
   </footer>
-
-<script>
-const API_KEY = 'AIzaSyCYWO2tmoIRNVwepHqGXY4cI5FM9MUJeHs';
-const EVESCO_FOLDER_ID = '19bwRa8uRwawINwFl9SlNGAl8Eyi3ww8t';
-const projectContainer = document.getElementById('project-container');
-
-const categoryMap = {
-  'Technical Proposals': ['spec', 'datasheet', 'technical'],
-  'Legal and Commercial Documents': ['contract', 'agreement', 'terms', 'msa'],
-};
-
-async function listSubfolders(parentId) {
-  const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q='${parentId}'+in+parents+and+mimeType='application/vnd.google-apps.folder'&key=${API_KEY}`
-  );
-  const data = await res.json();
-  return data.files || [];
-}
-
-async function listFilesInFolder(folderId) {
-  const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,webViewLink)&key=${API_KEY}`
-  );
-  const data = await res.json();
-  return data.files || [];
-}
-
-function categorizeFile(fileName) {
-  for (const [category, keywords] of Object.entries(categoryMap)) {
-    if (keywords.some(keyword => fileName.toLowerCase().includes(keyword))) {
-      return category;
-    }
-  }
-  return 'Other Attachments';
-}
-
-function createAccordion(projectName, categorizedFiles) {
-  let html = `<button class="accordion">${projectName}</button><div class="panel">`;
-  for (const [category, files] of Object.entries(categorizedFiles)) {
-    html += `<h3>${category}</h3>`;
-    files.forEach(file => {
-      html += `<a href="${file.webViewLink}" class="file-link" target="_blank">${file.name}</a>`;
-    });
-  }
-  html += `</div>`;
-  return html;
-}
-
-async function renderProjects() {
-  const projects = await listSubfolders(EVESCO_FOLDER_ID);
-  if (projects.length === 0) {
-    projectContainer.innerHTML = '<p>No projects found.</p>';
-    return;
-  }
-
-  const allHTML = await Promise.all(
-    projects.map(async (project) => {
-      const files = await listFilesInFolder(project.id);
-      const categorized = {};
-      files.forEach(file => {
-        const category = categorizeFile(file.name);
-        if (!categorized[category]) categorized[category] = [];
-        categorized[category].push(file);
-      });
-      return createAccordion(project.name, categorized);
-    })
-  );
-
-  projectContainer.innerHTML = allHTML.join('');
-
-  const acc = document.getElementsByClassName("accordion");
-  for (let i = 0; i < acc.length; i++) {
-    acc[i].addEventListener("click", function() {
-      this.classList.toggle("active");
-      const panel = this.nextElementSibling;
-      panel.style.display = panel.style.display === "block" ? "none" : "block";
-    });
-  }
-}
-
-renderProjects();
-</script>
 
 </body>
 </html>

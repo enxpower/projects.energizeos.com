@@ -1,159 +1,142 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>EVESCO Project Files – EnergizeOS</title>
+  <title>EVESCO Project Downloads – EnergizeOS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     body {
-      background-color: #111;
-      color: #eee;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0 1rem;
-    }
-    header {
-      text-align: center;
-      padding: 2rem 1rem 1rem;
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #f0f0f0;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
     }
     h1 {
-      margin: 0;
-      font-size: 2rem;
-    }
-    .project {
-      margin-bottom: 2rem;
+      color: #00b0ff;
     }
     h2 {
-      margin-top: 2rem;
+      margin-top: 40px;
       border-bottom: 1px solid #444;
-      padding-bottom: 0.3rem;
+      padding-bottom: 5px;
+      color: #00c3ff;
     }
     ul {
-      list-style: none;
-      padding-left: 1rem;
+      padding-left: 0;
+      list-style-type: none;
     }
     li {
-      margin-bottom: 0.5rem;
+      margin: 10px 0;
     }
     a {
-      color: #4dc2ff;
       text-decoration: none;
+      color: #80d0ff;
     }
     a:hover {
       text-decoration: underline;
     }
-    .category {
-      margin: 1rem 0 0.5rem;
-      font-weight: bold;
-      font-size: 1.1rem;
-      color: #99ccff;
-    }
     footer {
-      text-align: center;
-      margin-top: 4rem;
-      padding: 1rem 0;
-      font-size: 0.9rem;
-      color: #888;
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid #444;
+      font-size: 0.85em;
+      color: #aaa;
+      text-align: left;
+    }
+    .social-icons {
+      margin-top: 8px;
+    }
+    .social-icons a {
+      margin-right: 15px;
+      color: #aaa;
+    }
+    .social-icons a:hover {
+      color: #00b0ff;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>EVESCO Project Documents</h1>
-    <p>projects.energizeos.com/evesco</p>
-  </header>
+  <h1>📁 EVESCO Project Document Downloads</h1>
+  <p>Click any item below to download:</p>
 
-  <main id="content">
-    <p>Loading project folders from Google Drive...</p>
-  </main>
+  <div id="sections"></div>
 
   <footer>
-    &copy; 2025 Energize Solutions Inc. – EVESCO Projects
+    <div>© 2025 Energize Solutions Inc. – All rights reserved.</div>
+    <div>Powered by GitHub Pages | Contact: <a href="mailto:info@energizeos.com">info@energizeos.com</a></div>
+    <div class="social-icons">
+      <a href="https://www.linkedin.com/in/gongtiejing" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin fa-lg"></i></a>
+      <a href="https://github.com/enxpower" target="_blank" aria-label="GitHub"><i class="fab fa-github fa-lg"></i></a>
+    </div>
   </footer>
 
   <script>
+    const FOLDER_ID = '1ykgBUtl8lldouo6yZtjnQfISVakwM3cB'; // ← 可更换为EVESCO专属Google Drive目录ID
     const API_KEY = 'AIzaSyCYWO2tmoIRNVwepHqGXY4cI5FM9MUJeHs';
-    const FOLDER_ID = '19bwRa8uRwawINwFl9SlNGAl8Eyi3ww8t';
-    const content = document.getElementById('content');
 
-    const CATEGORY_RULES = {
-      'Technical Proposals': ['spec', 'technical', 'datasheet'],
-      'Legal and Commercial Documents': ['contract', 'terms', 'agreement', 'msa'],
-      'Other Attachments': []
+    const categories = {
+      'Product Specs': ['spec', 'datasheet', 'technical'],
+      'Standard Contracts': ['contract', 'agreement', 'terms', 'msa'],
+      'Product Images': ['.png', '.jpg', '.jpeg', 'image', 'photo', 'picture'],
+      'Certifications': ['cert', 'ul', 'iec', 'en', 'compliance', 'certificate'],
+      'Other Files': []
     };
 
-    async function listFilesInFolder(folderId) {
-      const res = await fetch(`https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&key=${API_KEY}&fields=files(id,name,mimeType,webViewLink)`);
-      const data = await res.json();
-      return data.files;
-    }
+    const filesByCategory = {
+      'Product Specs': [],
+      'Standard Contracts': [],
+      'Product Images': [],
+      'Certifications': [],
+      'Other Files': []
+    };
 
-    function categorizeFile(fileName) {
-      for (const [category, keywords] of Object.entries(CATEGORY_RULES)) {
-        if (keywords.some(keyword => fileName.toLowerCase().includes(keyword))) {
-          return category;
+    fetch(`https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents&key=${API_KEY}&fields=files(id,name,mimeType)&pageSize=1000`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.files || data.files.length === 0) {
+          document.getElementById('sections').innerHTML = '<p>No files found.</p>';
+          return;
         }
-      }
-      return 'Other Attachments';
-    }
 
-    async function loadProjects() {
-      const folders = await listFilesInFolder(FOLDER_ID);
-      const projectFolders = folders.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
-
-      if (projectFolders.length === 0) {
-        content.innerHTML = '<p>No project folders found.</p>';
-        return;
-      }
-
-      content.innerHTML = '';
-
-      for (const folder of projectFolders) {
-        const files = await listFilesInFolder(folder.id);
-        const categorized = {};
-
-        files.forEach(file => {
-          const category = categorizeFile(file.name);
-          if (!categorized[category]) categorized[category] = [];
-          categorized[category].push(file);
+        data.files.forEach(file => {
+          const fileName = file.name.toLowerCase();
+          let matched = false;
+          for (const category in categories) {
+            if (categories[category].some(keyword => fileName.includes(keyword))) {
+              filesByCategory[category].push(file);
+              matched = true;
+              break;
+            }
+          }
+          if (!matched) {
+            filesByCategory['Other Files'].push(file);
+          }
         });
 
-        const section = document.createElement('div');
-        section.className = 'project';
-
-        const title = document.createElement('h2');
-        title.textContent = folder.name;
-        section.appendChild(title);
-
-        for (const [category, files] of Object.entries(categorized)) {
-          const cat = document.createElement('div');
-          cat.className = 'category';
-          cat.textContent = category;
-          section.appendChild(cat);
-
+        const container = document.getElementById('sections');
+        for (const category in filesByCategory) {
+          if (filesByCategory[category].length === 0) continue;
+          const section = document.createElement('div');
+          section.innerHTML = `<h2>📂 ${category}</h2>`;
           const ul = document.createElement('ul');
-          files.forEach(file => {
+          filesByCategory[category].forEach(file => {
             const li = document.createElement('li');
             const link = document.createElement('a');
-            link.href = file.webViewLink;
+            link.textContent = `📄 ${file.name}`;
+            link.href = `https://drive.google.com/uc?export=download&id=${file.id}`;
             link.target = '_blank';
-            link.textContent = file.name;
             li.appendChild(link);
             ul.appendChild(li);
           });
-
           section.appendChild(ul);
+          container.appendChild(section);
         }
-
-        content.appendChild(section);
-      }
-    }
-
-    loadProjects().catch(err => {
-      content.innerHTML = '<p>Error loading documents. Please try again later.</p>';
-      console.error(err);
-    });
+      })
+      .catch(err => {
+        document.getElementById('sections').innerHTML = '<p>Error loading files.</p>';
+        console.error(err);
+      });
   </script>
 </body>
 </html>

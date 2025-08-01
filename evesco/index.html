@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EVESCO Project Files – EnergizeOS</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0 1rem;
+    }
+    header {
+      text-align: center;
+      padding: 2rem 1rem 1rem;
+    }
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+    .project {
+      margin-bottom: 2rem;
+    }
+    h2 {
+      margin-top: 2rem;
+      border-bottom: 1px solid #444;
+      padding-bottom: 0.3rem;
+    }
+    ul {
+      list-style: none;
+      padding-left: 1rem;
+    }
+    li {
+      margin-bottom: 0.5rem;
+    }
+    a {
+      color: #4dc2ff;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .category {
+      margin: 1rem 0 0.5rem;
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #99ccff;
+    }
+    footer {
+      text-align: center;
+      margin-top: 4rem;
+      padding: 1rem 0;
+      font-size: 0.9rem;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>EVESCO Project Documents</h1>
+    <p>projects.energizeos.com/evesco</p>
+  </header>
+
+  <main id="content">
+    <p>Loading project folders from Google Drive...</p>
+  </main>
+
+  <footer>
+    &copy; 2025 Energize Solutions Inc. – EVESCO Projects
+  </footer>
+
+  <script>
+    const API_KEY = 'AIzaSyCYWO2tmoIRNVwepHqGXY4cI5FM9MUJeHs';
+    const FOLDER_ID = '19bwRa8uRwawINwFl9SlNGAl8Eyi3ww8t';
+    const content = document.getElementById('content');
+
+    const CATEGORY_RULES = {
+      'Technical Proposals': ['spec', 'technical', 'datasheet'],
+      'Legal and Commercial Documents': ['contract', 'terms', 'agreement', 'msa'],
+      'Other Attachments': []
+    };
+
+    async function listFilesInFolder(folderId) {
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&key=${API_KEY}&fields=files(id,name,mimeType,webViewLink)`);
+      const data = await res.json();
+      return data.files;
+    }
+
+    function categorizeFile(fileName) {
+      for (const [category, keywords] of Object.entries(CATEGORY_RULES)) {
+        if (keywords.some(keyword => fileName.toLowerCase().includes(keyword))) {
+          return category;
+        }
+      }
+      return 'Other Attachments';
+    }
+
+    async function loadProjects() {
+      const folders = await listFilesInFolder(FOLDER_ID);
+      const projectFolders = folders.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
+
+      if (projectFolders.length === 0) {
+        content.innerHTML = '<p>No project folders found.</p>';
+        return;
+      }
+
+      content.innerHTML = '';
+
+      for (const folder of projectFolders) {
+        const files = await listFilesInFolder(folder.id);
+        const categorized = {};
+
+        files.forEach(file => {
+          const category = categorizeFile(file.name);
+          if (!categorized[category]) categorized[category] = [];
+          categorized[category].push(file);
+        });
+
+        const section = document.createElement('div');
+        section.className = 'project';
+
+        const title = document.createElement('h2');
+        title.textContent = folder.name;
+        section.appendChild(title);
+
+        for (const [category, files] of Object.entries(categorized)) {
+          const cat = document.createElement('div');
+          cat.className = 'category';
+          cat.textContent = category;
+          section.appendChild(cat);
+
+          const ul = document.createElement('ul');
+          files.forEach(file => {
+            const li = document.createElement('li');
+            const link = document.createElement('a');
+            link.href = file.webViewLink;
+            link.target = '_blank';
+            link.textContent = file.name;
+            li.appendChild(link);
+            ul.appendChild(li);
+          });
+
+          section.appendChild(ul);
+        }
+
+        content.appendChild(section);
+      }
+    }
+
+    loadProjects().catch(err => {
+      content.innerHTML = '<p>Error loading documents. Please try again later.</p>';
+      console.error(err);
+    });
+  </script>
+</body>
+</html>

@@ -1,159 +1,145 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>EVESCO Project Files – EnergizeOS</title>
+  <title>EVESCO – Project Files</title>
   <style>
     body {
-      background-color: #111;
-      color: #eee;
-      font-family: 'Segoe UI', sans-serif;
+      background-color: #121212;
+      color: #f0f0f0;
+      font-family: Arial, sans-serif;
       margin: 0;
-      padding: 0 1rem;
+      padding: 0;
     }
     header {
+      background-color: #1e1e1e;
+      padding: 20px;
       text-align: center;
-      padding: 2rem 1rem 1rem;
+      border-bottom: 1px solid #333;
     }
     h1 {
+      font-size: 24px;
       margin: 0;
-      font-size: 2rem;
     }
-    .project {
-      margin-bottom: 2rem;
+    .container {
+      padding: 30px;
     }
     h2 {
-      margin-top: 2rem;
       border-bottom: 1px solid #444;
-      padding-bottom: 0.3rem;
+      padding-bottom: 6px;
+      margin-top: 40px;
     }
     ul {
-      list-style: none;
-      padding-left: 1rem;
+      list-style-type: none;
+      padding-left: 10px;
     }
     li {
-      margin-bottom: 0.5rem;
+      margin-bottom: 8px;
     }
     a {
-      color: #4dc2ff;
+      color: #4fc3f7;
       text-decoration: none;
     }
     a:hover {
       text-decoration: underline;
     }
-    .category {
-      margin: 1rem 0 0.5rem;
-      font-weight: bold;
-      font-size: 1.1rem;
-      color: #99ccff;
-    }
     footer {
-      text-align: center;
-      margin-top: 4rem;
-      padding: 1rem 0;
-      font-size: 0.9rem;
-      color: #888;
+      background-color: #111;
+      color: #ccc;
+      padding: 20px;
+      font-size: 14px;
+      text-align: left;
+    }
+    footer hr {
+      border-color: #333;
+      margin-bottom: 10px;
+    }
+    .social-icons {
+      margin-top: 10px;
+    }
+    .icon {
+      width: 24px;
+      height: 24px;
+      margin-right: 10px;
+      vertical-align: middle;
+      filter: brightness(80%);
+    }
+    .icon:hover {
+      filter: brightness(120%);
     }
   </style>
 </head>
 <body>
   <header>
     <h1>EVESCO Project Documents</h1>
-    <p>projects.energizeos.com/evesco</p>
   </header>
+  <div class="container">
+    <h2>Technical Proposals</h2>
+    <ul id="tech-files">
+      <!-- Filled by script -->
+    </ul>
 
-  <main id="content">
-    <p>Loading project folders from Google Drive...</p>
-  </main>
+    <h2>Legal and Commercial Documents</h2>
+    <ul id="legal-files">
+      <!-- Filled by script -->
+    </ul>
+
+    <h2>Other Attachments</h2>
+    <ul id="other-files">
+      <!-- Filled by script -->
+    </ul>
+  </div>
 
   <footer>
-    &copy; 2025 Energize Solutions Inc. – EVESCO Projects
+    <hr>
+    <p>© 2025 Energize Solutions Inc. – All rights reserved.<br>
+    Powered by GitHub Pages | Contact: <a href="mailto:info@energizeos.com">info@energizeos.com</a></p>
+    <div class="social-icons">
+      <a href="https://www.linkedin.com/in/gongtiejing" target="_blank" aria-label="LinkedIn">
+        <img src="https://cdn.jsdelivr.net/npm/simple-icons@v10/icons/linkedin.svg" alt="LinkedIn" class="icon">
+      </a>
+      <a href="https://github.com/enxpower" target="_blank" aria-label="GitHub">
+        <img src="https://cdn.jsdelivr.net/npm/simple-icons@v10/icons/github.svg" alt="GitHub" class="icon">
+      </a>
+    </div>
   </footer>
 
   <script>
-    const API_KEY = 'AIzaSyCYWO2tmoIRNVwepHqGXY4cI5FM9MUJeHs';
-    const FOLDER_ID = '19bwRa8uRwawINwFl9SlNGAl8Eyi3ww8t';
-    const content = document.getElementById('content');
+    // Google Drive 文件夹 ID
+    const folderId = '19bwRa8uRwawINwFl9SlNGAl8Eyi3ww8t'; // EVESCO 文件夹
 
-    const CATEGORY_RULES = {
-      'Technical Proposals': ['spec', 'technical', 'datasheet'],
-      'Legal and Commercial Documents': ['contract', 'terms', 'agreement', 'msa'],
-      'Other Attachments': []
+    const API_KEY = 'YOUR_GOOGLE_DRIVE_API_KEY'; // 替换为真实API Key
+
+    const categoryRules = {
+      tech: ['spec', 'datasheet', 'technical'],
+      legal: ['contract', 'agreement', 'terms', 'msa'],
     };
 
-    async function listFilesInFolder(folderId) {
-      const res = await fetch(`https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&key=${API_KEY}&fields=files(id,name,mimeType,webViewLink)`);
+    function categorize(filename) {
+      const lower = filename.toLowerCase();
+      for (const word of categoryRules.tech) {
+        if (lower.includes(word)) return 'tech-files';
+      }
+      for (const word of categoryRules.legal) {
+        if (lower.includes(word)) return 'legal-files';
+      }
+      return 'other-files';
+    }
+
+    async function listFiles() {
+      const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents&key=${API_KEY}&fields=files(id,name,webViewLink)&pageSize=1000`;
+      const res = await fetch(url);
       const data = await res.json();
-      return data.files;
+
+      data.files.forEach(file => {
+        const li = document.createElement('li');
+        li.innerHTML = `<a href="${file.webViewLink}" target="_blank">${file.name}</a>`;
+        document.getElementById(categorize(file.name)).appendChild(li);
+      });
     }
 
-    function categorizeFile(fileName) {
-      for (const [category, keywords] of Object.entries(CATEGORY_RULES)) {
-        if (keywords.some(keyword => fileName.toLowerCase().includes(keyword))) {
-          return category;
-        }
-      }
-      return 'Other Attachments';
-    }
-
-    async function loadProjects() {
-      const folders = await listFilesInFolder(FOLDER_ID);
-      const projectFolders = folders.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
-
-      if (projectFolders.length === 0) {
-        content.innerHTML = '<p>No project folders found.</p>';
-        return;
-      }
-
-      content.innerHTML = '';
-
-      for (const folder of projectFolders) {
-        const files = await listFilesInFolder(folder.id);
-        const categorized = {};
-
-        files.forEach(file => {
-          const category = categorizeFile(file.name);
-          if (!categorized[category]) categorized[category] = [];
-          categorized[category].push(file);
-        });
-
-        const section = document.createElement('div');
-        section.className = 'project';
-
-        const title = document.createElement('h2');
-        title.textContent = folder.name;
-        section.appendChild(title);
-
-        for (const [category, files] of Object.entries(categorized)) {
-          const cat = document.createElement('div');
-          cat.className = 'category';
-          cat.textContent = category;
-          section.appendChild(cat);
-
-          const ul = document.createElement('ul');
-          files.forEach(file => {
-            const li = document.createElement('li');
-            const link = document.createElement('a');
-            link.href = file.webViewLink;
-            link.target = '_blank';
-            link.textContent = file.name;
-            li.appendChild(link);
-            ul.appendChild(li);
-          });
-
-          section.appendChild(ul);
-        }
-
-        content.appendChild(section);
-      }
-    }
-
-    loadProjects().catch(err => {
-      content.innerHTML = '<p>Error loading documents. Please try again later.</p>';
-      console.error(err);
-    });
+    listFiles();
   </script>
 </body>
 </html>

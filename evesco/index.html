@@ -2,141 +2,120 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>EVESCO Project Downloads – EnergizeOS</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EVESCO Project Files</title>
   <style>
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
-      background-color: #121212;
+      background-color: #111;
       color: #f0f0f0;
-      max-width: 800px;
-      margin: 50px auto;
-      padding: 20px;
+    }
+    header {
+      background-color: #1c1c1c;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid #333;
     }
     h1 {
-      color: #00b0ff;
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    main {
+      padding: 2rem;
+      max-width: 1000px;
+      margin: auto;
+    }
+    section {
+      margin-bottom: 2.5rem;
     }
     h2 {
-      margin-top: 40px;
-      border-bottom: 1px solid #444;
-      padding-bottom: 5px;
-      color: #00c3ff;
+      color: #00c7a9;
+      border-bottom: 1px solid #333;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
     }
     ul {
+      list-style: none;
       padding-left: 0;
-      list-style-type: none;
     }
     li {
-      margin: 10px 0;
+      padding: 0.5rem 0;
     }
     a {
+      color: #4fc1ff;
       text-decoration: none;
-      color: #80d0ff;
     }
     a:hover {
       text-decoration: underline;
     }
     footer {
-      margin-top: 60px;
-      padding-top: 20px;
-      border-top: 1px solid #444;
-      font-size: 0.85em;
-      color: #aaa;
-      text-align: left;
-    }
-    .social-icons {
-      margin-top: 8px;
-    }
-    .social-icons a {
-      margin-right: 15px;
-      color: #aaa;
-    }
-    .social-icons a:hover {
-      color: #00b0ff;
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+      border-top: 1px solid #333;
+      font-size: 0.9rem;
     }
   </style>
 </head>
 <body>
-  <h1>📁 EVESCO Project Document Downloads</h1>
-  <p>Click any item below to download:</p>
+  <header>
+    <h1>EVESCO – Project Documentation</h1>
+  </header>
+  <main>
+    <section>
+      <h2>Technical Proposals</h2>
+      <ul id="technical-proposals">
+        <!-- File links inserted via JavaScript -->
+      </ul>
+    </section>
 
-  <div id="sections"></div>
+    <section>
+      <h2>Legal and Commercial Documents</h2>
+      <ul id="legal-docs">
+        <!-- File links inserted via JavaScript -->
+      </ul>
+    </section>
 
+    <section>
+      <h2>Other Attachments</h2>
+      <ul id="other-files">
+        <!-- File links inserted via JavaScript -->
+      </ul>
+    </section>
+  </main>
   <footer>
-    <div>© 2025 Energize Solutions Inc. – All rights reserved.</div>
-    <div>Powered by GitHub Pages | Contact: <a href="mailto:info@energizeos.com">info@energizeos.com</a></div>
-    <div class="social-icons">
-      <a href="https://www.linkedin.com/in/gongtiejing" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin fa-lg"></i></a>
-      <a href="https://github.com/enxpower" target="_blank" aria-label="GitHub"><i class="fab fa-github fa-lg"></i></a>
-    </div>
+    Hosted on <a href="https://github.com/enxpower">GitHub</a> · Powered by EnergizeOS™
   </footer>
 
   <script>
-    const FOLDER_ID = '1ykgBUtl8lldouo6yZtjnQfISVakwM3cB'; // ← 可更换为EVESCO专属Google Drive目录ID
-    const API_KEY = 'AIzaSyCYWO2tmoIRNVwepHqGXY4cI5FM9MUJeHs';
+    const folderId = "19bwRa8uRwawINwFl9SlNGAl8Eyi3ww8t"; // EVESCO Drive Folder
+    const accessToken = "AIzaSyCYWO2tmoIRNVwepHqGXY4cI5FM9MUJeHs"; // Replace with real API token if needed
 
-    const categories = {
-      'Product Specs': ['spec', 'datasheet', 'technical'],
-      'Standard Contracts': ['contract', 'agreement', 'terms', 'msa'],
-      'Product Images': ['.png', '.jpg', '.jpeg', 'image', 'photo', 'picture'],
-      'Certifications': ['cert', 'ul', 'iec', 'en', 'compliance', 'certificate'],
-      'Other Files': []
+    const keywords = {
+      "technical-proposals": ["spec", "proposal", "design", "technical"],
+      "legal-docs": ["contract", "agreement", "terms", "legal"],
+      "other-files": [] // everything else
     };
 
-    const filesByCategory = {
-      'Product Specs': [],
-      'Standard Contracts': [],
-      'Product Images': [],
-      'Certifications': [],
-      'Other Files': []
-    };
+    async function listFiles() {
+      const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents&fields=files(id,name,mimeType,webViewLink)&key=${accessToken}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const files = data.files || [];
 
-    fetch(`https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents&key=${API_KEY}&fields=files(id,name,mimeType)&pageSize=1000`)
-      .then(res => res.json())
-      .then(data => {
-        if (!data.files || data.files.length === 0) {
-          document.getElementById('sections').innerHTML = '<p>No files found.</p>';
-          return;
-        }
+      files.forEach(file => {
+        const name = file.name.toLowerCase();
+        let category = "other-files";
+        if (keywords["technical-proposals"].some(k => name.includes(k))) category = "technical-proposals";
+        else if (keywords["legal-docs"].some(k => name.includes(k))) category = "legal-docs";
 
-        data.files.forEach(file => {
-          const fileName = file.name.toLowerCase();
-          let matched = false;
-          for (const category in categories) {
-            if (categories[category].some(keyword => fileName.includes(keyword))) {
-              filesByCategory[category].push(file);
-              matched = true;
-              break;
-            }
-          }
-          if (!matched) {
-            filesByCategory['Other Files'].push(file);
-          }
-        });
-
-        const container = document.getElementById('sections');
-        for (const category in filesByCategory) {
-          if (filesByCategory[category].length === 0) continue;
-          const section = document.createElement('div');
-          section.innerHTML = `<h2>📂 ${category}</h2>`;
-          const ul = document.createElement('ul');
-          filesByCategory[category].forEach(file => {
-            const li = document.createElement('li');
-            const link = document.createElement('a');
-            link.textContent = `📄 ${file.name}`;
-            link.href = `https://drive.google.com/uc?export=download&id=${file.id}`;
-            link.target = '_blank';
-            li.appendChild(link);
-            ul.appendChild(li);
-          });
-          section.appendChild(ul);
-          container.appendChild(section);
-        }
-      })
-      .catch(err => {
-        document.getElementById('sections').innerHTML = '<p>Error loading files.</p>';
-        console.error(err);
+        const li = document.createElement("li");
+        li.innerHTML = `<a href="${file.webViewLink}" target="_blank">${file.name}</a>`;
+        document.getElementById(category).appendChild(li);
       });
+    }
+
+    listFiles();
   </script>
 </body>
 </html>

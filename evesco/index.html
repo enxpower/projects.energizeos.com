@@ -2,21 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>EVESCO Project Documents</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     body {
+      margin: 0;
+      font-family: Arial, sans-serif;
       background-color: #111;
       color: #fff;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      text-align: center;
     }
+
     h1 {
-      padding: 1rem;
+      text-align: center;
+      margin-top: 2rem;
     }
+
     .accordion {
       background-color: #222;
       color: white;
@@ -30,141 +30,147 @@
       font-size: 16px;
       transition: 0.4s;
       border-bottom: 1px solid #444;
+      position: relative;
     }
-    .active, .accordion:hover {
-      background-color: #333;
+
+    .accordion::after {
+      content: '▶';
+      color: #fff;
+      font-size: 13px;
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      transition: transform 0.2s ease;
     }
+
+    .accordion.active::after {
+      content: '▼';
+    }
+
     .panel {
-      padding: 0 18px;
-      display: none;
       background-color: #1a1a1a;
       overflow: hidden;
+      display: none;
       text-align: left;
       width: 80%;
       margin: 0 auto 2rem;
+      padding: 0 18px 1rem;
     }
+
     .panel h3 {
-      padding-top: 1rem;
+      margin-top: 1rem;
+      color: #f5c518;
     }
-    .file-link {
-      color: #4da6ff;
+
+    .panel ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .panel li {
+      margin: 5px 0;
+    }
+
+    .panel li a {
+      color: #4ea1ff;
       text-decoration: none;
-      display: block;
-      margin: 8px 0;
     }
+
+    .panel li a:hover {
+      text-decoration: underline;
+    }
+
     footer {
-      border-top: 1px solid #444;
-      margin-top: 2rem;
-      padding: 1rem;
-      font-size: 0.8rem;
-      background-color: #111;
+      text-align: center;
+      padding: 2rem 1rem;
+      background-color: #0a0a0a;
+      color: #ccc;
+      font-size: 14px;
+      border-top: 1px solid #333;
     }
+
     footer a {
-      color: #4da6ff;
+      color: #4ea1ff;
       text-decoration: none;
     }
-    .footer-icons a {
-      margin: 0 10px;
-      color: #ccc;
-      font-size: 1.2rem;
+
+    footer .icons {
+      margin-top: 0.5rem;
+    }
+
+    footer .icons a {
+      margin: 0 5px;
+      display: inline-block;
+    }
+
+    footer .icons img {
+      width: 20px;
+      height: 20px;
     }
   </style>
 </head>
 <body>
   <h1>EVESCO Project Documents</h1>
 
-  <div id="project-container">Loading project folders...</div>
+  <button class="accordion">Antigua</button>
+  <div class="panel">
+    <h3>Legal and Commercial Documents</h3>
+    <ul>
+      <li><a href="#">Phase_1_Proposal_Antigua_Engineering_Agreement.pdf</a></li>
+    </ul>
+    <h3>Other Attachments</h3>
+    <ul>
+      <li><a href="#">Site Layout Drawing.pdf</a></li>
+    </ul>
+  </div>
+
+  <button class="accordion">SDGE</button>
+  <div class="panel">
+    <h3>Legal and Commercial Documents</h3>
+    <ul>
+      <li><a href="#">Phase_1_Proposal_PepsiCo_SDGE__Engineering_Agreement_V1.0.pdf</a></li>
+      <li><a href="#">Phase_2_System_Design_Services_Proposal_Engineering_Agreement.pdf</a></li>
+      <li><a href="#">Phase_2_System_Design_Services_Proposal_Engineering_Agreement_v2.0.pdf</a></li>
+      <li><a href="#">Phase_3_Implementation_Service_Proposal_Engineering_Agreement.pdf</a></li>
+    </ul>
+    <h3>Other Attachments</h3>
+    <ul>
+      <li><a href="#">Rectification_Path_Confirmation_Form.pdf</a></li>
+      <li><a href="#">File# 001669 RECTIFICATION PATH CONFIRMATION FORM.pdf</a></li>
+      <li><a href="#">0612CT0101.pdf</a></li>
+      <li><a href="#">CA-PEP01_SAN DIEGO MEGA - Oneline & Layout.pdf</a></li>
+      <li><a href="#">CA-PEP01_SAN DIEGO MEGA - UTILITY UPDATE 06-25.pdf</a></li>
+    </ul>
+  </div>
 
   <footer>
-    <p>© 2025 Energize Solutions Inc. – All rights reserved.<br />
-      Powered by GitHub Pages | Contact: <a href="mailto:info@energizeos.com">info@energizeos.com</a></p>
-    <div class="footer-icons">
-      <a href="https://www.linkedin.com/in/gongtiejing" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
-      <a href="https://github.com/enxpower" target="_blank" aria-label="GitHub"><i class="fab fa-github"></i></a>
+    © 2025 Energize Solutions Inc. – All rights reserved.<br/>
+    Powered by GitHub Pages | Contact: <a href="mailto:info@energizeos.com">info@energizeos.com</a>
+    <div class="icons">
+      <a href="https://www.linkedin.com/in/gongtiejing" target="_blank">
+        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/linkedin.svg" alt="LinkedIn" />
+      </a>
+      <a href="https://github.com/enxpower" target="_blank">
+        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/github.svg" alt="GitHub" />
+      </a>
     </div>
   </footer>
 
-<script>
-const API_KEY = 'AIzaSyCYWO2tmoIRNVwepHqGXY4cI5FM9MUJeHs';
-const EVESCO_FOLDER_ID = '19bwRa8uRwawINwFl9SlNGAl8Eyi3ww8t';
-const projectContainer = document.getElementById('project-container');
-
-const categoryMap = {
-  '📁 Technical Proposals': ['spec', 'datasheet', 'technical'],
-  '📁 Legal and Commercial Documents': ['contract', 'agreement', 'terms', 'msa'],
-};
-
-async function listSubfolders(parentId) {
-  const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q='${parentId}'+in+parents+and+mimeType='application/vnd.google-apps.folder'&key=${API_KEY}`
-  );
-  const data = await res.json();
-  return data.files || [];
-}
-
-async function listFilesInFolder(folderId) {
-  const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,webViewLink)&key=${API_KEY}`
-  );
-  const data = await res.json();
-  return data.files || [];
-}
-
-function categorizeFile(fileName) {
-  for (const [category, keywords] of Object.entries(categoryMap)) {
-    if (keywords.some(keyword => fileName.toLowerCase().includes(keyword))) {
-      return category;
-    }
-  }
-  return '📁 Other Attachments';
-}
-
-function createAccordion(projectName, categorizedFiles) {
-  let html = `<button class="accordion">${projectName}</button><div class="panel">`;
-  for (const [category, files] of Object.entries(categorizedFiles)) {
-    html += `<h3>${category}</h3>`;
-    files.forEach(file => {
-      html += `<a href="${file.webViewLink}" class="file-link" target="_blank">📄 ${file.name}</a>`;
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const acc = document.getElementsByClassName("accordion");
+      for (let i = 0; i < acc.length; i++) {
+        acc[i].addEventListener("click", function () {
+          this.classList.toggle("active");
+          const panel = this.nextElementSibling;
+          if (panel.style.display === "block") {
+            panel.style.display = "none";
+          } else {
+            panel.style.display = "block";
+          }
+        });
+      }
     });
-  }
-  html += `</div>`;
-  return html;
-}
-
-async function renderProjects() {
-  const projects = await listSubfolders(EVESCO_FOLDER_ID);
-  if (projects.length === 0) {
-    projectContainer.innerHTML = '<p>No projects found.</p>';
-    return;
-  }
-
-  const allHTML = await Promise.all(
-    projects.map(async (project) => {
-      const files = await listFilesInFolder(project.id);
-      const categorized = {};
-      files.forEach(file => {
-        const category = categorizeFile(file.name);
-        if (!categorized[category]) categorized[category] = [];
-        categorized[category].push(file);
-      });
-      return createAccordion(project.name, categorized);
-    })
-  );
-
-  projectContainer.innerHTML = allHTML.join('');
-
-  const acc = document.getElementsByClassName("accordion");
-  for (let i = 0; i < acc.length; i++) {
-    acc[i].addEventListener("click", function() {
-      this.classList.toggle("active");
-      const panel = this.nextElementSibling;
-      panel.style.display = panel.style.display === "block" ? "none" : "block";
-    });
-  }
-}
-
-renderProjects();
-</script>
-
+  </script>
 </body>
 </html>

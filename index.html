@@ -3,15 +3,17 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>EnergizeOS™ Project Documents</title>
+<title>EnergizeOS™ Project Documents (Secure)</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
   :root { --w:82%; }
   body{ background:#111; color:#fff; font-family:Arial, sans-serif; margin:0; padding:0; text-align:center; }
-  h1{ padding:1rem 1rem .5rem; margin:0; }
+  h1{ padding:1rem 1rem .25rem; margin:0; }
   .toolbar{ width:var(--w); margin:0 auto 10px; display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; justify-content:space-between; }
-  .toolbar .left, .toolbar .right{ display:flex; gap:.5rem; flex-wrap:wrap; }
+  .toolbar .left, .toolbar .right{ display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
   input[type="search"], select{ background:#1b1b1b; color:#eee; border:1px solid #333; padding:.6rem .75rem; border-radius:6px; min-width:220px; }
+  .btn{ background:#2a2a2a; color:#eee; border:1px solid #3a3a3a; padding:.55rem .9rem; border-radius:8px; cursor:pointer; }
+  .btn:hover{ background:#343434; }
   .counter{ color:#aaa; font-size:.9rem; padding:.25rem .5rem; }
   .accordion{ background:#222; color:#fff; cursor:pointer; padding:16px; width:var(--w); margin:0 auto; border:none; text-align:left; font-size:16px; transition:.25s; border-bottom:1px solid #444; }
   .accordion:hover,.accordion.active{ background:#313131; }
@@ -20,19 +22,21 @@
   .section h3{ margin:0; padding:12px 16px 4px; color:#cfcfcf; font-size:1rem; }
   .file-link{ color:#4da6ff; text-decoration:none; display:block; padding:10px 18px; background:#1a1a1a; border-bottom:1px solid #2c2c2c; transition:background .2s; }
   .file-link:hover{ background:#262626; }
-  .muted{ color:#9d9d9d; font-size:.9rem; padding:0 18px 10px; display:block; }
+  .muted{ color:#9d9d9d; font-size:.95rem; padding:1rem 0 0; display:block; }
   .badge{ display:inline-block; border:1px solid #3b3b3b; padding:1px 6px; border-radius:999px; font-size:.75rem; color:#bbb; margin-left:6px; }
   .hidden{ display:none !important; }
   footer{ border-top:1px solid #444; margin-top:2rem; padding:1rem; font-size:.8rem; background:#111; }
   footer a{ color:#4da6ff; text-decoration:none; }
   .footer-icons a{ margin:0 10px; color:#ccc; font-size:1.2rem; }
+  .center{ width:var(--w); margin:1rem auto; }
 </style>
 </head>
 <body>
   <h1>Project Documents</h1>
+
   <div class="toolbar">
     <div class="left">
-      <input id="q" type="search" placeholder="Search customers / projects / files"/>
+      <input id="q" type="search" placeholder="Search customers / projects / files" />
       <select id="cat">
         <option value="all">All categories</option>
         <option value="tech">Technical Proposals</option>
@@ -41,11 +45,13 @@
       </select>
     </div>
     <div class="right">
-      <span class="counter" id="stats">Loading…</span>
+      <span class="counter" id="stats">Not signed in</span>
+      <button id="signin" class="btn">Sign in with Google</button>
+      <button id="signout" class="btn hidden">Sign out</button>
     </div>
   </div>
 
-  <div id="root">Loading customers…</div>
+  <div id="root" class="center">Please sign in to view documents.</div>
 
   <footer>
     <p>© 2025 Energize Solutions Inc. – All rights reserved.<br/>
@@ -56,49 +62,110 @@
     </div>
   </footer>
 
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-/** ================== 基本配置（实时，无缓存） ================== */
+/** ================== CONFIG ================== */
 const CONFIG = {
-  API_KEY: 'AIzaSyCYWO2tmoIRNVwepHqGXY4cI5FM9MUJeHs',
-  ROOT_FOLDER_ID: '1gQY05eoSW5WU1U4emQELF0uYiY6jpT7j', // projects/ 的 Folder ID
+  CLIENT_ID: '484304558800-7shgksndvt5psc0rllrk4boj5p5aaave.apps.googleusercontent.com',
+  ROOT_FOLDER_ID: '1gQY05eoSW5WU1U4emQELF0uYiY6jpT7j',
   PAGE_SIZE: 200,
-  SORT_CUSTOMERS: "name",            // or "modifiedTime desc"
+  SORT_CUSTOMERS: "name",
   SORT_PROJECTS: "name",
   SORT_FILES: "modifiedTime desc",
-  EXPORT_GOOGLE_DOCS_AS: "pdf"       // pdf / docx / xlsx / pptx
+  EXPORT_GOOGLE_DOCS_AS: "pdf" // pdf / docx / xlsx / pptx
 };
 
-/** =============== 分类关键字（可自行增删） =============== */
+/** =============== Categories =============== */
 const CATEGORY_MAP = {
   tech:  { label:'📁 Technical Proposals', keywords:['spec','datasheet','technical','proposal','design','drawing'] },
-  legal: { label:'📁 Legal and Commercial Documents', keywords:['contract','agreement','terms','msa','quote','pricing','commercial','invoice'] }
+  legal: { label:'📁 Legal & Commercial Documents', keywords:['contract','agreement','terms','msa','quote','pricing','commercial','invoice'] }
 };
 const OTHER_KEY = 'other';
 const OTHER_LABEL = '📁 Other Attachments';
 
-/** =============== 选择器 & 统计 =============== */
+/** =============== Elements & State =============== */
 const $root = document.getElementById('root');
 const $q = document.getElementById('q');
 const $cat = document.getElementById('cat');
 const $stats = document.getElementById('stats');
+const $signin = document.getElementById('signin');
+const $signout = document.getElementById('signout');
+
+let ACCESS_TOKEN = null;
 let TOTALS = { customers:0, projects:0, files:0 };
 
-/* ================= Drive 通用分页（每次实时请求） ================= */
-async function driveList({q, orderBy}) {
+/** =============== OAuth init & handlers (robust) =============== */
+let tokenClient = null;
+
+function initOAuth() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CONFIG.CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/drive.readonly',
+    callback: (resp) => {
+      if (resp && resp.access_token) {
+        ACCESS_TOKEN = resp.access_token;
+        $stats.textContent = 'Signed in';
+        $signin.classList.add('hidden');
+        $signout.classList.remove('hidden');
+        render().catch(showError);
+      } else {
+        showError('Failed to obtain access token.');
+      }
+    }
+  });
+}
+
+function ensureInit() {
+  if (!tokenClient && window.google && google.accounts && google.accounts.oauth2) {
+    initOAuth();
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  $signin.setAttribute('type','button');
+  $signin.addEventListener('click', () => {
+    ensureInit();
+    if (!tokenClient) { return showError('Google Identity script not ready.'); }
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  });
+
+  $signout.addEventListener('click', () => {
+    if (!ACCESS_TOKEN) return;
+    google.accounts.oauth2.revoke(ACCESS_TOKEN, () => {
+      ACCESS_TOKEN = null;
+      $signin.classList.remove('hidden');
+      $signout.classList.add('hidden');
+      $stats.textContent = 'Signed out';
+      $root.innerHTML = 'Please sign in to view documents.';
+    });
+  });
+
+  $q.addEventListener('input', debounce(applyFilters, 150));
+  $cat.addEventListener('change', applyFilters);
+});
+
+/** =============== Drive helpers (Bearer token) =============== */
+async function driveList({ q, orderBy }) {
+  if (!ACCESS_TOKEN) throw new Error('Not signed in');
   const base = 'https://www.googleapis.com/drive/v3/files';
   const fields = 'nextPageToken, files(id,name,mimeType,modifiedTime,webViewLink,iconLink,size,exportLinks)';
   let pageToken = null;
   const out = [];
   do {
     const url = new URL(base);
-    url.searchParams.set('key', CONFIG.API_KEY);
     url.searchParams.set('fields', fields);
     url.searchParams.set('pageSize', CONFIG.PAGE_SIZE);
     if (orderBy) url.searchParams.set('orderBy', orderBy);
     if (q) url.searchParams.set('q', q);
     if (pageToken) url.searchParams.set('pageToken', pageToken);
 
-    const res = await fetch(url.href);
+    const res = await fetch(url.href, {
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
+    });
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('Not authorized. Make sure this Google account has access to the folder.');
+    }
     const data = await res.json();
     if (data.files) out.push(...data.files);
     pageToken = data.nextPageToken || null;
@@ -106,7 +173,6 @@ async function driveList({q, orderBy}) {
   return out;
 }
 
-/* ================ 列客户（子文件夹） ================ */
 async function listCustomers(rootId) {
   const q = [
     `'${rootId}' in parents`,
@@ -116,7 +182,6 @@ async function listCustomers(rootId) {
   return await driveList({ q, orderBy: CONFIG.SORT_CUSTOMERS });
 }
 
-/* ================ 列项目（客户下子文件夹） ================ */
 async function listProjects(customerFolderId) {
   const q = [
     `'${customerFolderId}' in parents`,
@@ -126,7 +191,6 @@ async function listProjects(customerFolderId) {
   return await driveList({ q, orderBy: CONFIG.SORT_PROJECTS });
 }
 
-/* ================ 列文件（项目下文件） ================ */
 async function listFiles(projectFolderId) {
   const q = [
     `'${projectFolderId}' in parents`,
@@ -136,7 +200,6 @@ async function listFiles(projectFolderId) {
   return await driveList({ q, orderBy: CONFIG.SORT_FILES });
 }
 
-/* ================ 生成下载链接（含 Google 文档导出） ================ */
 function getDownloadLink(file) {
   const mt = file.mimeType || '';
   const mimeOut = {
@@ -153,30 +216,35 @@ function getDownloadLink(file) {
         mt.includes('presentation')? (want==='pptx' ? mimeOut.pptx: mimeOut.pdf) :
         mt.includes('document')   ? (want==='docx' ? mimeOut.docx: mimeOut.pdf) :
         mimeOut.pdf;
-      const url = file.exportLinks[target] || file.webViewLink;
-      return url + `&key=${CONFIG.API_KEY}`;
+      return file.exportLinks[target] || file.webViewLink;
     }
     return file.webViewLink;
   }
-  return `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&key=${CONFIG.API_KEY}`;
+  return `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`;
 }
 
-/* ================= 工具 ================= */
-function esc(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+/** =============== Utils =============== */
+function esc(s){
+  return (s||'').replace(/[&<>"']/g, m => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]
+  ));
+}
 function bytes(n){ if(!n||n<=0) return ''; const u=['B','KB','MB','GB','TB']; const i=Math.floor(Math.log(n)/Math.log(1024)); return (n/Math.pow(1024,i)).toFixed(1)+' '+u[i]; }
 function bucketCategory(name){
-  const n = (name||'').toLowerCase();
-  for (const key of Object.keys(CATEGORY_MAP)) {
+  const n=(name||'').toLowerCase();
+  for(const key of Object.keys(CATEGORY_MAP)){
     if (CATEGORY_MAP[key].keywords.some(k => n.includes(k))) return key;
   }
   return OTHER_KEY;
 }
-function updateStatsText(curC, curP, curF){
-  $stats.textContent = `Customers: ${curC}/${TOTALS.customers} · Projects: ${curP}/${TOTALS.projects} · Files: ${curF}/${TOTALS.files}`;
+function showError(err){
+  console.error(err);
+  $root.innerHTML = `<p class="muted">Error: ${esc(String(err.message || err))}</p>`;
+  $stats.textContent = 'Error';
 }
 
-/* ================== 渲染 ================== */
-function fileRow(file) {
+/** =============== Rendering =============== */
+function fileRow(file){
   const dl = getDownloadLink(file);
   const sz = file.size ? ` <small>(${bytes(+file.size)})</small>` : '';
   const dt = file.modifiedTime ? ` <small>· ${new Date(file.modifiedTime).toLocaleDateString()}</small>` : '';
@@ -187,28 +255,24 @@ function fileRow(file) {
           </a>`;
 }
 
-function projectBlock(projectName, files) {
+function projectBlock(projectName, files){
   const buckets = { tech:[], legal:[], other:[] };
   files.forEach(f => buckets[bucketCategory(f.name)].push(f));
-
   let html = `<button class="accordion" data-type="project" data-name="${esc(projectName.toLowerCase())}">
                 ${esc(projectName)} <span class="badge">${files.length}</span>
               </button>
               <div class="panel">`;
-
-  const order = ['tech','legal','other'];
-  order.forEach(key=>{
-    const label = key===OTHER_KEY ? OTHER_LABEL : CATEGORY_MAP[key].label;
+  ['tech','legal','other'].forEach(key=>{
+    const label = key===OTHER_KEY? OTHER_LABEL : CATEGORY_MAP[key].label;
     html += `<div class="section"><h3>${label}</h3>`;
     html += buckets[key].length ? buckets[key].map(fileRow).join('') : `<span class="muted">No files</span>`;
     html += `</div>`;
   });
-
   html += `</div>`;
   return html;
 }
 
-function customerBlock(customerName, projectsHTML, projectCount, fileCount) {
+function customerBlock(customerName, projectsHTML, projectCount, fileCount){
   return `<button class="accordion" data-type="customer" data-name="${esc(customerName.toLowerCase())}">
             ${esc(customerName)} <span class="badge">${projectCount} projects · ${fileCount} files</span>
           </button>
@@ -228,23 +292,20 @@ function bindAccordion(rootEl){
   });
 }
 
-/* ================== 搜索与筛选（客户/项目/文件 三级） ================== */
+/** =============== Search & Filter =============== */
 function applyFilters(){
-  const q = ($q.value || '').trim().toLowerCase();
+  const q = ($q.value||'').trim().toLowerCase();
   const cat = $cat.value; // all / tech / legal / other
-
   const customerBtns = $root.querySelectorAll('.accordion[data-type="customer"]');
-  let visC = 0, visP = 0, visF = 0;
 
+  let visC=0, visP=0, visF=0;
   customerBtns.forEach(cbtn=>{
     const cPanel = cbtn.nextElementSibling;
-
     const projectBtns = cPanel.querySelectorAll('.accordion[data-type="project"]');
     let showCustomer = false;
 
     projectBtns.forEach(pbtn=>{
       const pPanel = pbtn.nextElementSibling;
-
       const files = pPanel.querySelectorAll('.file-link');
       let matchFiles = 0;
       files.forEach(a=>{
@@ -262,8 +323,7 @@ function applyFilters(){
 
       if (keepProject) {
         showCustomer = true;
-        visP++;
-        visF += matchFiles;
+        visP++; visF += matchFiles;
       }
     });
 
@@ -272,45 +332,45 @@ function applyFilters(){
     if (showCustomer) visC++;
   });
 
-  updateStatsText(visC, visP, visF);
+  $stats.textContent = `Customers: ${visC}/${TOTALS.customers} · Projects: ${visP}/${TOTALS.projects} · Files: ${visF}/${TOTALS.files}`;
 }
 
-/* 简单防抖 */
-function debounce(fn, ms=250){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; }
+function debounce(fn, ms=250){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 
-/* ================== 主流程（实时） ================== */
-async function render() {
+/** =============== Main Render =============== */
+async function render(){
+  if (!ACCESS_TOKEN) return;
   $root.textContent = 'Loading customers…';
   TOTALS = { customers:0, projects:0, files:0 };
 
-  const customers = await listCustomers(CONFIG.ROOT_FOLDER_ID);
-  TOTALS.customers = customers.length;
+  try{
+    const customers = await listCustomers(CONFIG.ROOT_FOLDER_ID);
+    TOTALS.customers = customers.length;
 
-  const customerBlocks = await Promise.all(customers.map(async (c)=>{
-    const projects = await listProjects(c.id);
-    let filesTotal = 0;
-    TOTALS.projects += projects.length;
+    const blocks = await Promise.all(customers.map(async (c)=>{
+      const projects = await listProjects(c.id);
+      let filesTotal = 0;
+      TOTALS.projects += projects.length;
 
-    const projectsHTML = await Promise.all(projects.map(async (p)=>{
-      const files = await listFiles(p.id);
-      filesTotal += files.length;
-      TOTALS.files += files.length;
-      return projectBlock(p.name, files);
+      const pHtml = await Promise.all(projects.map(async (p)=>{
+        const files = await listFiles(p.id);
+        filesTotal += files.length;
+        TOTALS.files += files.length;
+        return projectBlock(p.name, files);
+      }));
+
+      return customerBlock(c.name, pHtml.join(''), projects.length, filesTotal);
     }));
 
-    return customerBlock(c.name, projectsHTML.join(''), projects.length, filesTotal);
-  }));
-
-  const html = customerBlocks.join('');
-  $root.innerHTML = html || '<p>No customers/projects found.</p>';
-  updateStatsText(TOTALS.customers, TOTALS.projects, TOTALS.files);
-  bindAccordion($root);
+    const html = blocks.join('');
+    $root.innerHTML = html || '<p class="muted">No customers/projects found.</p>';
+    $stats.textContent = `Customers: ${TOTALS.customers} · Projects: ${TOTALS.projects} · Files: ${TOTALS.files}`;
+    bindAccordion($root);
+    applyFilters();
+  }catch(err){
+    showError(err);
+  }
 }
-
-$q.addEventListener('input', debounce(applyFilters, 150));
-$cat.addEventListener('change', applyFilters);
-
-render(); // 每次访问或刷新都会实时请求 Drive
 </script>
 </body>
 </html>

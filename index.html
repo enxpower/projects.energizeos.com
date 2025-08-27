@@ -21,7 +21,6 @@
   .file-link{ color:#4da6ff; text-decoration:none; display:block; padding:10px 18px; background:#1a1a1a; border-bottom:1px solid #2c2c2c; transition:background .2s; }
   .file-link:hover{ background:#262626; }
   .muted{ color:#9d9d9d; font-size:.9rem; padding:0 18px 10px; display:block; }
-  .tags{ font-size:.85rem; color:#aaa; margin-left:6px; }
   .badge{ display:inline-block; border:1px solid #3b3b3b; padding:1px 6px; border-radius:999px; font-size:.75rem; color:#bbb; margin-left:6px; }
   .hidden{ display:none !important; }
   footer{ border-top:1px solid #444; margin-top:2rem; padding:1rem; font-size:.8rem; background:#111; }
@@ -58,15 +57,14 @@
   </footer>
 
 <script>
-/** ================== 基本配置（只改这里） ================== */
+/** ================== 基本配置（实时，无缓存） ================== */
 const CONFIG = {
   API_KEY: 'AIzaSyCYWO2tmoIRNVwepHqGXY4cI5FM9MUJeHs',
-  ROOT_FOLDER_ID: '1gQY05eoSW5WU1U4emQELF0uYiY6jpT7j', // ← 把它换成 Google Drive 中“projects/”的 Folder ID
+  ROOT_FOLDER_ID: '1gQY05eoSW5WU1U4emQELF0uYiY6jpT7j', // projects/ 的 Folder ID
   PAGE_SIZE: 200,
   SORT_CUSTOMERS: "name",            // or "modifiedTime desc"
   SORT_PROJECTS: "name",
   SORT_FILES: "modifiedTime desc",
-  USE_SESSION_CACHE: true,
   EXPORT_GOOGLE_DOCS_AS: "pdf"       // pdf / docx / xlsx / pptx
 };
 
@@ -78,15 +76,14 @@ const CATEGORY_MAP = {
 const OTHER_KEY = 'other';
 const OTHER_LABEL = '📁 Other Attachments';
 
-/** =============== 选择器 & 状态 =============== */
+/** =============== 选择器 & 统计 =============== */
 const $root = document.getElementById('root');
 const $q = document.getElementById('q');
 const $cat = document.getElementById('cat');
 const $stats = document.getElementById('stats');
+let TOTALS = { customers:0, projects:0, files:0 };
 
-let DATA = { customers: 0, projects: 0, files: 0 };
-
-/* ================= Drive 通用分页 ================= */
+/* ================= Drive 通用分页（每次实时请求） ================= */
 async function driveList({q, orderBy}) {
   const base = 'https://www.googleapis.com/drive/v3/files';
   const fields = 'nextPageToken, files(id,name,mimeType,modifiedTime,webViewLink,iconLink,size,exportLinks)';
@@ -174,7 +171,9 @@ function bucketCategory(name){
   }
   return OTHER_KEY;
 }
-function setStats(){ $stats.textContent = `Customers: ${DATA.customers} · Projects: ${DATA.projects} · Files: ${DATA.files}`; }
+function updateStatsText(curC, curP, curF){
+  $stats.textContent = `Customers: ${curC}/${TOTALS.customers} · Projects: ${curP}/${TOTALS.projects} · Files: ${curF}/${TOTALS.files}`;
+}
 
 /* ================== 渲染 ================== */
 function fileRow(file) {
@@ -182,7 +181,6 @@ function fileRow(file) {
   const sz = file.size ? ` <small>(${bytes(+file.size)})</small>` : '';
   const dt = file.modifiedTime ? ` <small>· ${new Date(file.modifiedTime).toLocaleDateString()}</small>` : '';
   const catKey = bucketCategory(file.name);
-  const catLabel = catKey === OTHER_KEY ? OTHER_LABEL : CATEGORY_MAP[catKey].label;
   return `<a class="file-link" data-cat="${catKey}" data-name="${esc(file.name.toLowerCase())}"
             href="${dl}" target="_blank" rel="noopener">
             📄 ${esc(file.name)}${sz}${dt}
@@ -190,7 +188,6 @@ function fileRow(file) {
 }
 
 function projectBlock(projectName, files) {
-  // 分类到三个区块
   const buckets = { tech:[], legal:[], other:[] };
   files.forEach(f => buckets[bucketCategory(f.name)].push(f));
 
@@ -231,67 +228,23 @@ function bindAccordion(rootEl){
   });
 }
 
-/* ================== 轻缓存 ================== */
-function cacheGet(k){ if(!CONFIG.USE_SESSION_CACHE) return null; try{ return JSON.parse(sessionStorage.getItem(k)); }catch{ return null; } }
-function cacheSet(k,v){ if(!CONFIG.USE_SESSION_CACHE) return; try{ sessionStorage.setItem(k, JSON.stringify(v)); }catch{} }
-
-/* ================== 主流程 ================== */
-async function render() {
-  const cacheKey = `3level:${CONFIG.ROOT_FOLDER_ID}`;
-  const cached = cacheGet(cacheKey);
-  if (cached) {
-    $root.innerHTML = cached.html;
-    DATA = cached.stats; setStats();
-    bindAccordion($root);
-    return;
-  }
-
-  $root.textContent = 'Loading customers…';
-  const customers = await listCustomers(CONFIG.ROOT_FOLDER_ID);
-  DATA.customers = customers.length;
-
-  const customerBlocks = await Promise.all(customers.map(async (c)=>{
-    const projects = await listProjects(c.id);
-    let filesTotal = 0;
-    DATA.projects += projects.length;
-
-    const projectsHTML = await Promise.all(projects.map(async (p)=>{
-      const files = await listFiles(p.id);
-      filesTotal += files.length;
-      DATA.files += files.length;
-      return projectBlock(p.name, files);
-    }));
-
-    return customerBlock(c.name, projectsHTML.join(''), projects.length, filesTotal);
-  }));
-
-  const html = customerBlocks.join('');
-  $root.innerHTML = html || '<p>No customers/projects found.</p>';
-  setStats();
-  bindAccordion($root);
-  cacheSet(cacheKey, { html, stats: DATA });
-}
-
-/* =============== 搜索与筛选（客户/项目/文件 三级生效） =============== */
+/* ================== 搜索与筛选（客户/项目/文件 三级） ================== */
 function applyFilters(){
   const q = ($q.value || '').trim().toLowerCase();
   const cat = $cat.value; // all / tech / legal / other
 
-  // 遍历客户级
   const customerBtns = $root.querySelectorAll('.accordion[data-type="customer"]');
-  let visibleCustomers = 0, visibleProjects = 0, visibleFiles = 0;
+  let visC = 0, visP = 0, visF = 0;
 
   customerBtns.forEach(cbtn=>{
     const cPanel = cbtn.nextElementSibling;
 
-    // 逐个项目过滤
     const projectBtns = cPanel.querySelectorAll('.accordion[data-type="project"]');
     let showCustomer = false;
 
     projectBtns.forEach(pbtn=>{
       const pPanel = pbtn.nextElementSibling;
 
-      // 文件级过滤
       const files = pPanel.querySelectorAll('.file-link');
       let matchFiles = 0;
       files.forEach(a=>{
@@ -303,36 +256,61 @@ function applyFilters(){
         if (keep) matchFiles++;
       });
 
-      // 若当前项目下无匹配文件，同时项目名/客户名也不匹配搜索，则隐藏项目
       const keepProject = matchFiles>0 || (!q || pbtn.dataset.name.includes(q) || cbtn.dataset.name.includes(q));
       pbtn.classList.toggle('hidden', !keepProject);
       pPanel.classList.toggle('hidden', !keepProject);
 
       if (keepProject) {
         showCustomer = true;
-        visibleProjects++;
-        visibleFiles += matchFiles;
+        visP++;
+        visF += matchFiles;
       }
     });
 
     cbtn.classList.toggle('hidden', !showCustomer);
     cPanel.classList.toggle('hidden', !showCustomer);
-    if (showCustomer) visibleCustomers++;
+    if (showCustomer) visC++;
   });
 
-  // 更新统计（不覆盖原总量，只显示当前可见计数）
-  const txt = `Customers: ${visibleCustomers}/${DATA.customers} · Projects: ${visibleProjects}/${DATA.projects} · Files: ${visibleFiles}/${DATA.files}`;
-  $stats.textContent = txt;
+  updateStatsText(visC, visP, visF);
 }
 
 /* 简单防抖 */
 function debounce(fn, ms=250){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; }
 
+/* ================== 主流程（实时） ================== */
+async function render() {
+  $root.textContent = 'Loading customers…';
+  TOTALS = { customers:0, projects:0, files:0 };
+
+  const customers = await listCustomers(CONFIG.ROOT_FOLDER_ID);
+  TOTALS.customers = customers.length;
+
+  const customerBlocks = await Promise.all(customers.map(async (c)=>{
+    const projects = await listProjects(c.id);
+    let filesTotal = 0;
+    TOTALS.projects += projects.length;
+
+    const projectsHTML = await Promise.all(projects.map(async (p)=>{
+      const files = await listFiles(p.id);
+      filesTotal += files.length;
+      TOTALS.files += files.length;
+      return projectBlock(p.name, files);
+    }));
+
+    return customerBlock(c.name, projectsHTML.join(''), projects.length, filesTotal);
+  }));
+
+  const html = customerBlocks.join('');
+  $root.innerHTML = html || '<p>No customers/projects found.</p>';
+  updateStatsText(TOTALS.customers, TOTALS.projects, TOTALS.files);
+  bindAccordion($root);
+}
+
 $q.addEventListener('input', debounce(applyFilters, 150));
 $cat.addEventListener('change', applyFilters);
 
-render().then(()=>{ /* 默认不展开；搜索时会显示匹配内容 */ });
-
+render(); // 每次访问或刷新都会实时请求 Drive
 </script>
 </body>
 </html>
